@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /usr/bin/env bash
 # 声明关联数组存储信息
 
 set -e
@@ -24,6 +24,12 @@ while IFS=, read -r current_no pname current_pver; do
     repo[$pname]="https://10.3.10.30/project-2193/$pname"
 done < "$csv_file"
 
+# die $pname $stage
+die() {
+    echo $1 stage $2 failed | tee -a $2.failed
+    continue
+}
+
 # 处理每个项目
 for pname in "${!no[@]}"; do
     echo "正在处理项目: $pname"
@@ -35,14 +41,14 @@ for pname in "${!no[@]}"; do
 
     # 步骤5：克隆仓库到项目目录
     echo "克隆仓库: ${repo[$pname]}"
-    git clone "${repo[$pname]}" "$source_dir"
+    git clone "${repo[$pname]}" "$source_dir" || die $pname git-clone
 
     # 进入项目目录
     pushd "$source_dir"
 
     # 步骤6：切换到指定版本
     echo "切换到版本: ${pver[$pname]}"
-    git checkout "${pver[$pname]}"
+    git checkout "${pver[$pname]}" || die $pname git-checkout
 
     # 步骤3：在项目目录中创建虚拟环境
     venv_dir="$source_dir/venv"
@@ -52,9 +58,10 @@ for pname in "${!no[@]}"; do
     # 步骤7：构建项目（在虚拟环境中执行）
     echo "开始构建..."
     source "$venv_dir/bin/activate"
+    python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
     python3 -m pip install --upgrade pip
     python3 -m pip install build
-    python3 -m build
+    python3 -m build || die $pname whl-build
     deactivate
 
     echo "项目 $pname 处理完成！"
