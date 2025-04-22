@@ -21,7 +21,7 @@ while IFS=, read -r current_no pname current_pver; do
     pname=$(echo "$pname" | xargs)
     no[$pname]=$(echo "$current_no" | xargs)
     pver[$pname]=$(echo "$current_pver" | xargs)
-    repo[$pname]="https://10.3.10.30/project-2193/$pname"
+    repo[$pname]="http://10.3.10.30/project-2193/$pname"
 done < "$csv_file"
 
 # die $pname $stage
