@@ -12,7 +12,7 @@ declare -Ar color=(
 )
 
 # shellcheck disable=SC2155
-declare -r scriptPath=$(dirname $(readlink -f "$0"))
+declare -r scriptPath=$(dirname $(readlink -f "${0}"))
 
 # helper functions
 info() {
@@ -22,8 +22,8 @@ info() {
 
 # warn $package $stage
 warn() {
-    echo -e "${color[warn]}W:${color[reset]} $*..."
-    echo "${2}" stage error: "${1}" | tee -a "${scriptPath}/logs/${2}.warn"
+    echo -e "${color[warn]}W:${color[reset]} ${1}..."
+    echo "${1}" | tee -a "${scriptPath}/logs/${package}-${version}.fail"
 
 }
 
@@ -61,6 +61,9 @@ if [[ $DEBUG -eq 1 ]] ;then
     done
 fi
 
+# Remove old logs
+rm -v ${scriptPath}/logs/*.fail
+
 for package in "${!packages[@]}"; do
     info "Processing package: ${package}"
     source_dir="${HOME}/source/${package}"
@@ -68,20 +71,20 @@ for package in "${!packages[@]}"; do
     mkdir -p "${source_dir}"
 
     info "Cloning source code: ${repo[$package]}"
-    git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed" git-clone
+    git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed"
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
-
+        info "----------------------------------"
         if [[ -f "${scriptPath}/logs/${package}.${version}".success ]] ; then
             info "${package} was successfully built in a previous run"
             continue
         fi
         info "Trying to checkout tag: ${version}"
         if git describe "${version}" >& /dev/null ; then
-            git checkout "${version}" || warn "${package}-${version} checkout failed" git-checkout
+            git checkout "${version}" || warn "${package} checkout to ${version} failed"
         else
-            warn "${package}-${version} not exists" git-checkout
+            warn "${package} tag ${version} not exists"
             continue
         fi
 
@@ -95,12 +98,17 @@ for package in "${!packages[@]}"; do
         python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
         python3 -m pip install --upgrade pip
         python3 -m pip install build
+
         info "Building python wheel package"
-        python3 -m build || warn "${package}  build failed" whl-build
+        python3 -m build || warn "${package} build failed"
         deactivate
 
-        info "Process ${package} finished！"
-        touch "${scriptPath}/logs/${package}.${version}".success
+        if [[ ! -f "${scriptPath}/logs/${package}.${version}.fail" ]] ; then
+            info "Process ${package} finished！"
+            touch "${scriptPath}/logs/${package}.${version}".success
+        else
+            info "Process ${package} failed!"
+        fi
         info "----------------------------------"
     done
     popd || die "No able to pop out ${PWD}"
