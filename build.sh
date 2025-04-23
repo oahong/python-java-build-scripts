@@ -33,6 +33,14 @@ die() {
     exit 1
 }
 
+upload() {
+    local whl=${1}
+    curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"	\
+        -X POST -H "Content-Type: multipart/form-data"	\
+        -F "pypi.asset=@${whl}"						\
+        "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
+}
+
 # Read $CSV_FILE, fallback to target/python.csv
 csv_file=${CSV_FILE:-${scriptPath}/target/python.csv}
 
@@ -115,3 +123,8 @@ for package in "${!packages[@]}"; do
 done
 
 info "Everything is done！"
+
+while IFS= read -r artifact; do
+    info "uploading artifact ${artifact}"
+    upload "${artifact}"
+done < <(find "${HOME}/source" -type f -name '*.whl')
