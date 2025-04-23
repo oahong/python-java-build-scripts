@@ -74,7 +74,7 @@ if [[ $DEBUG -eq 1 ]] ;then
 fi
 
 # Remove old logs
-rm -v ${scriptPath}/logs/*.fail
+rm -v "${scriptPath}"/logs/*.fail
 
 for package in "${!packages[@]}"; do
     info "Processing package: ${package}"
