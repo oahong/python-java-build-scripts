@@ -76,7 +76,7 @@ for package in "${!packages[@]}"; do
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
         info "----------------------------------"
-        if [[ -f "${scriptPath}/logs/${package}.${version}".success ]] ; then
+        if [[ -f "${scriptPath}/logs/${package}-${version}".success ]] ; then
             info "${package} was successfully built in a previous run"
             continue
         fi
@@ -103,11 +103,11 @@ for package in "${!packages[@]}"; do
         python3 -m build || warn "${package} build failed"
         deactivate
 
-        if [[ ! -f "${scriptPath}/logs/${package}.${version}.fail" ]] ; then
-            info "Process ${package} finished！"
-            touch "${scriptPath}/logs/${package}.${version}".success
+        if [[ -f "${scriptPath}/logs/${package}-${version}".fail ]] ; then
+            info "Process ${package} ${version} failed!"
         else
-            info "Process ${package} failed!"
+            info "Process ${package} ${version} finished！"
+            touch "${scriptPath}/logs/${package}-${version}".success
         fi
         info "----------------------------------"
     done
