@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 # 声明关联数组存储信息
+# dnf install python3-devel gcc zlib-devel
 
 declare -A repo
 declare -A packages
@@ -63,12 +64,17 @@ for package in "${!packages[@]}"; do
     mkdir -p "${source_dir}"
 
     info "Cloning source code: ${repo[$package]}"
-    git clone "${repo[$package]}" "${source_dir}" || warn "${package}" git-clone
+    git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed" git-clone
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
-        info "Checkout to tag: ${version}"
-        git checkout "${version}" || warn "${package}" git-checkout
+        info "Trying to checkout tag: ${version}"
+        if git describe ${version} >& /dev/null ; then
+            git checkout "${version}" || warn "${package}-${version} checkout failed" git-checkout
+        else
+            warn "${package}-${version} not exists" git-checkout
+            continue
+        fi
 
         venv_dir="${source_dir}/venv"
         info "Creating python venv: $venv_dir"
@@ -80,7 +86,7 @@ for package in "${!packages[@]}"; do
         python3 -m pip install --upgrade pip
         python3 -m pip install build
         info "Building python wheel package"
-        python3 -m build || warn "${package}" whl-build
+        python3 -m build || warn "${package}  build failed" whl-build
         deactivate
 
         info "Process ${package} finished！"
