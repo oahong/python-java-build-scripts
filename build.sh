@@ -11,6 +11,9 @@ declare -Ar color=(
     ['warn']='\e[1m\e[33m'
 )
 
+# shellcheck disable=SC2155
+declare -r scriptPath=$(readlink -f "$0")
+
 # helper functions
 info() {
     echo -e "${color[info]}I:${color[reset]} $*..."
@@ -20,7 +23,8 @@ info() {
 # warn $package $stage
 warn() {
     echo -e "${color[warn]}W:${color[reset]} $*..."
-    echo "$1" stage "$2" error | tee -a "$2.warn"
+    echo "${2}" stage error: "${1}" | tee -a "${scriptPath}/logs/${2}.warn"
+
 }
 
 # die $package $stage
@@ -30,7 +34,7 @@ die() {
 }
 
 # Read $CSV_FILE, fallback to target/python.csv
-csv_file=${CSV_FILE:-target/python.csv}
+csv_file=${CSV_FILE:-${scriptPath}/target/python.csv}
 
 if [[ ! -f "$csv_file" ]]; then
     die "No such file: $csv_file"
@@ -69,7 +73,7 @@ for package in "${!packages[@]}"; do
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
         info "Trying to checkout tag: ${version}"
-        if git describe ${version} >& /dev/null ; then
+        if git describe "${version}" >& /dev/null ; then
             git checkout "${version}" || warn "${package}-${version} checkout failed" git-checkout
         else
             warn "${package}-${version} not exists" git-checkout
@@ -80,6 +84,7 @@ for package in "${!packages[@]}"; do
         info "Creating python venv: $venv_dir"
         python3 -m venv "${venv_dir}"
 
+        # shellcheck disable=SC1091
         source "$venv_dir/bin/activate"
         info "Setting pypi global index url"
         python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
