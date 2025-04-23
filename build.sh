@@ -72,6 +72,11 @@ for package in "${!packages[@]}"; do
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
+
+        if [[ "${scriptPath}/logs/${package}.${version}".success ]] ; then
+            info "${package} was successfully built in a previous run"
+            continue
+        fi
         info "Trying to checkout tag: ${version}"
         if git describe "${version}" >& /dev/null ; then
             git checkout "${version}" || warn "${package}-${version} checkout failed" git-checkout
@@ -95,6 +100,7 @@ for package in "${!packages[@]}"; do
         deactivate
 
         info "Process ${package} finished！"
+        touch "${scriptPath}/logs/${package}.${version}".success
         info "----------------------------------"
     done
     popd || die "No able to pop out ${PWD}"
