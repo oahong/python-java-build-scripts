@@ -23,7 +23,7 @@ info() {
 # warn $package $stage
 warn() {
     echo -e "${color[warn]}W:${color[reset]} ${1}..."
-    echo "${1}" | tee -a "${scriptPath}/logs/${package}-${version}.fail"
+    echo "${1}" | tee -a "${scriptPath}/logs/${package}-${version:-all}.fail"
 
 }
 
