@@ -73,7 +73,7 @@ for package in "${!packages[@]}"; do
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
 
-        if [[ "${scriptPath}/logs/${package}.${version}".success ]] ; then
+        if [[ -f "${scriptPath}/logs/${package}.${version}".success ]] ; then
             info "${package} was successfully built in a previous run"
             continue
         fi
