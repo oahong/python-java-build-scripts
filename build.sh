@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 # 声明关联数组存储信息
-# dnf install python3-devel gcc zlib-devel
+# dnf install python3-devel gcc zlib-devel gcc-c++ libjpeg-turbo-devel cmake
 
 declare -A repo
 declare -A packages
