@@ -12,7 +12,7 @@ declare -Ar color=(
 )
 
 # shellcheck disable=SC2155
-declare -r scriptPath=$(readlink -f "$0")
+declare -r scriptPath=$(dirname $(readlink -f "$0"))
 
 # helper functions
 info() {
