@@ -45,7 +45,11 @@ upload() {
 csv_file=${CSV_FILE:-${scriptPath}/target/python.csv}
 
 if [[ ! -f "$csv_file" ]]; then
-    die "No such file: $csv_file"
+    die "No such file: ${csv_file}"
+fi
+
+if [[ -z "${NEXUS_PASS}" ]] ; then
+    die "Set up NEXUS_PASS environment variable firsts"
 fi
 
 # Read CSV contents
