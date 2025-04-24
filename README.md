@@ -23,8 +23,10 @@
 git clone http://10.3.10.30/project-2193/scripts
 # password 替换为 nexus 指定账号密码
 NEXUS_PASS=password scripts/build.sh | tee scripts/build-$(date +%F)-$$.log
+# password 替换为 nexus 指定账号密码
+NEXUS_PASS=password scripts/build.sh -p arrow -v apache-arrow-4.0.2 | tee scripts/build-arrow-$(date +%F)-$$.log
 ```
 
 ## TODO
 - [ ] 增加hooks功能，针对软件包增加独立处理功能
-- [ ] 脚本跟参数，指定软件包名和/或版本
+- [x] 脚本跟参数，指定软件包名和/或版本

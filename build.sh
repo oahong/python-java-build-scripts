@@ -41,8 +41,62 @@ upload() {
         "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
 }
 
-# Read $CSV_FILE, fallback to target/python.csv
-csv_file=${CSV_FILE:-${scriptPath}/target/python.csv}
+help() {
+    cat <<EOF
+Usage: ${0} [OPTIONS]
+A script to build python packages
+
+Options:
+  -n, --name NAME        Specify a package name
+  -v, --version VERSION  Specify a package version
+  -f, --csvfile FILE     Specify a CSV file
+  -u, --upload           Upload artifacts
+  -h, --help             Display this help message and exit
+
+Examples:
+  ${0} --name 'John' --version '1.0' --csvfile 'data.csv'
+  ${0} -n 'Jane' -v '2.1' -f 'input.csv'
+EOF
+    exit 0
+}
+
+options=$(getopt --name "${0}" \
+    --options n:v:f:uh \
+    --longoptions name:,version:,csvfile:,upload,help \
+    -- "$@")
+eval set -- "${options}"
+
+while : ; do
+    case "${1}" in
+        -n|--name)
+            packagename="${2}"
+            shift 2
+            ;;
+        -v|--version)
+            packageversion="${2}"
+            shift 2
+            ;;
+        -f|--csvfile)
+            filename="${2}"
+            shift 2
+            ;;
+        -u|--upload)
+            do_upload="YESPLEASE"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            help
+            shift
+            ;;
+    esac
+done
+
+# fallback to target/python.csv
+csv_file=${filename:-${scriptPath}/target/python.csv}
 
 if [[ ! -f "$csv_file" ]]; then
     die "No such file: ${csv_file}"
@@ -73,10 +127,17 @@ if [[ $DEBUG -eq 1 ]] ;then
     done
 fi
 
-# Remove old logs
-rm -v "${scriptPath}"/logs/*.fail
-
 for package in "${!packages[@]}"; do
+    if [[ -n "${packagename}" ]] ; then
+        if [[ "${packagename}" != "${package}" ]] ; then
+            info "Skipping package ${package}"
+            continue
+        fi
+    fi
+
+    # Remove old package logs
+    rm -v "${scriptPath}/logs/${package}-*".fail
+
     info "Processing package: ${package}"
     source_dir="${HOME}/source/${package}"
     info "Making directory: ${source_dir}"
@@ -87,6 +148,12 @@ for package in "${!packages[@]}"; do
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
+        if [[ -n "${packageversion}" ]] ; then
+            if [[ "${packageversion}" != "${version}" ]] ; then
+                info "Skipping package ${package} version ${version}"
+                continue
+            fi
+        fi
         info "----------------------------------"
         if [[ -f "${scriptPath}/logs/${package}-${version}".success ]] ; then
             info "${package} was successfully built in a previous run"
@@ -130,9 +197,11 @@ for package in "${!packages[@]}"; do
     popd || die "No able to pop out ${PWD}"
 done
 
-info "Everything is done！"
+if [[ "${do_upload}" == "YESPLEASE" ]] ; then
+    while IFS= read -r artifact; do
+        info "Uploading artifact ${artifact}"
+        upload "${artifact}"
+    done < <(find "${HOME}/source" -type f -name '*.whl')
+fi
 
-while IFS= read -r artifact; do
-    info "uploading artifact ${artifact}"
-    upload "${artifact}"
-done < <(find "${HOME}/source" -type f -name '*.whl')
+info "Everything is done！"
