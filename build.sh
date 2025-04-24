@@ -132,7 +132,7 @@ done
 
 info "Everything is done！"
 
-for artifact in $(find ${HOME}/source -type f -name *.whl) ; do
+while IFS= read -r artifact; do
     info "uploading artifact ${artifact}"
     upload "${artifact}"
-done
+done < <(find "${HOME}/source" -type f -name '*.whl')
