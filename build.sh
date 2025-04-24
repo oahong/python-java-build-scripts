@@ -143,8 +143,12 @@ for package in "${!packages[@]}"; do
     info "Making directory: ${source_dir}"
     mkdir -p "${source_dir}"
 
-    info "Cloning source code: ${repo[$package]}"
-    git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed"
+    if [[ -d "${source_dir}/.git" ]] ; then
+        info "Source code repository already exists at ${source_dir}, skipping git clone"
+    else
+        info "Cloning source code from ${repo[$package]} to ${source_dir}"
+        git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed"
+    fi
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
