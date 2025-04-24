@@ -136,7 +136,7 @@ for package in "${!packages[@]}"; do
     fi
 
     # Remove old package logs
-    rm -v "${scriptPath}/logs/${package}-*".fail
+    rm -v "${scriptPath}/logs/${package}"-*.fail
 
     info "Processing package: ${package}"
     source_dir="${HOME}/source/${package}"
