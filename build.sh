@@ -183,11 +183,15 @@ for package in "${!packages[@]}"; do
         source "$venv_dir/bin/activate"
         info "Setting pypi global index url"
         python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
-        python3 -m pip install --upgrade pip
-        python3 -m pip install build
+        python3 -m pip install --upgrade pip setuptools wheel build
 
         info "Building python wheel package"
-        python3 -m build || warn "${package} build failed"
+        if [[ -f pyproject.toml ]] ; then
+            python3 -m build || warn "${package} build failed via build"
+        else
+            python3 setup.py bdist_wheel || warn "${package} build failed via setuptools"
+            #python3 setup.py sdist
+        fi
         deactivate
 
         if [[ -f "${scriptPath}/logs/${package}-${version}".fail ]] ; then
