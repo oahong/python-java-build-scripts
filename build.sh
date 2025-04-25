@@ -1,6 +1,8 @@
 #! /usr/bin/env bash
-# 声明关联数组存储信息
-# dnf install python3-devel gcc zlib-devel gcc-c++ libjpeg-turbo-devel cmake
+#
+# Prebuilt dependencies
+# dnf install python3-devel gcc zlib-devel gcc-c++ libjpeg-turbo-devel cmake python3-Cython \
+# ninja-build python3-meson-python
 
 declare -A repo
 declare -A packages
@@ -197,7 +199,7 @@ for package in "${!packages[@]}"; do
         if [[ -f "${scriptPath}/logs/${package}-${version}".fail ]] ; then
             info "Process ${package} ${version} failed!"
         else
-            info "Process ${package} ${version} finished！"
+            info "Process ${package} ${version} finished!"
             touch "${scriptPath}/logs/${package}-${version}".success
         fi
         info "----------------------------------"
@@ -212,4 +214,4 @@ if [[ "${do_upload}" == "YESPLEASE" ]] ; then
     done < <(find "${HOME}/source" -type f -name '*.whl')
 fi
 
-info "Everything is done！"
+info "Everything is done!"
