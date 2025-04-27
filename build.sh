@@ -1,8 +1,9 @@
 #! /usr/bin/env bash
 #
 # Prebuilt dependencies
-# dnf install python3-devel gcc zlib-devel gcc-c++ libjpeg-turbo-devel cmake python3-Cython \
+# dnf install python3-devel gcc zlib-devel gcc-c++ libjpeg-turbo-devel cmake \
 # ninja-build python3-meson-python
+# lxml: libxml2-devel and libxslt-devel
 
 declare -A repo
 declare -A packages
