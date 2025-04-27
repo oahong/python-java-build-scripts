@@ -84,10 +84,10 @@ while : ; do
             ;;
         -u|--upload)
             do_upload="YESPLEASE"
-            shift 2
+            shift 1
             ;;
         --)
-            shift
+            shift 1
             break
             ;;
         *)
