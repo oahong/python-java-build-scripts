@@ -185,7 +185,7 @@ for package in "${!packages[@]}"; do
         source "$venv_dir/bin/activate"
         info "Setting pypi global index url"
         python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
-        python3 -m pip install --upgrade pip setuptools wheel build
+        python3 -m pip install --upgrade pip setuptools wheel build cython
 
         info "Building python wheel package"
         if [[ -f pyproject.toml ]] ; then
