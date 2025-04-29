@@ -31,6 +31,13 @@ scripts/build.sh | tee scripts/build-$(date +%F)-$$.log
 NEXUS_PASS=password scripts/build.sh -u -p arrow -v apache-arrow-4.0.2 | tee scripts/build-arrow-$(date +%F)-$$.log
 ```
 
+## 日志输出
+脚本运行输出两类日志：
+1. ${package}-${version}.fail
+   记录软件包在源码clone、tag签出、构建等各阶段失败的记录，脚本运行前会清理
+2. ${package}-${version}.success
+   标记软件包的某个版本构建成功，作为placeholder脚本下次执行会跳过再次构建
+
 ## TODO
 - [ ] 增加hooks功能
   - [ ] 增加构建前软件包系统依赖检测功能
