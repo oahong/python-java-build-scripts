@@ -167,7 +167,7 @@ for package in "${!packages[@]}"; do
             continue
         fi
         info "Trying to checkout tag: ${version}"
-        if git describe "${version}" >& /dev/null ; then
+        if git describe --tags "${version}" >& /dev/null ; then
             git checkout "${version}" || warn "${package} checkout to ${version} failed"
             if [[ -f .gitmodules ]]; then
                info "Updating git submodules"
