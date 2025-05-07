@@ -211,6 +211,8 @@ for package in "${!packages[@]}"; do
         info "Setting pypi global index url"
         python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
         python3 -m pip install --upgrade pip setuptools wheel build cython
+        python3 -m pip config set global.trusted-host 10.3.10.189
+        python3 -m pip config set global.extra-index-url http://10.3.10.189:8081/repository/project-2193-python/simple
         invoke_hook_command env-setup "${venv_dir}"
 
         info "Building python wheel package"
