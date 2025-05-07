@@ -7,6 +7,15 @@
 
 declare -A repo
 declare -A packages
+# A list of available stages in the build workflow
+declare -r stages=(
+    'clone'
+    'checkout'
+    'submodules'
+    'env-setup'
+    'build'
+    'upload'
+)
 declare -Ar color=(
     ['reset']='\e[0m'
     ['error']='\e[1m\e[31m'
@@ -22,7 +31,6 @@ info() {
     echo -e "${color[info]}I:${color[reset]} $*..."
 }
 
-
 # warn $package $stage
 warn() {
     echo -e "${color[warn]}W:${color[reset]} ${1}..."
@@ -34,6 +42,20 @@ warn() {
 die() {
     echo -e "${color[error]}E:=1=${color[reset]} $*" >&2
     exit 1
+}
+
+invoke_hook_command() {
+    local stage="${1}"
+    local dir="${2:-${source_dir}}"
+
+    for s in "${stages[@]}" ; do
+        if [[ "${s}" == "${stage}" ]] ; then
+            if [[ -f "${scriptPath}/hooks/post-${stage}" ]] ; then
+                info "Inovke hook command in stage ${stage}"
+                eval "${scriptPath}/hooks/post-${stage}" "${dir}" || true
+            fi
+        fi
+    done
 }
 
 upload() {
@@ -93,7 +115,7 @@ while : ; do
             ;;
         *)
             help
-            shift
+            shift 1
             ;;
     esac
 done
@@ -152,6 +174,7 @@ for package in "${!packages[@]}"; do
         info "Cloning source code from ${repo[$package]} to ${source_dir}"
         git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed"
     fi
+    invoke_hook_command clone
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
     for version in ${packages[$package]} ; do
@@ -177,9 +200,10 @@ for package in "${!packages[@]}"; do
             warn "${package} tag ${version} not exists"
             continue
         fi
+        invoke_hook_command checkout
 
         venv_dir="${source_dir}/venv"
-        info "Creating python venv: $venv_dir"
+        info "Creating python venv: ${venv_dir}"
         python3 -m venv "${venv_dir}"
 
         # shellcheck disable=SC1091
@@ -187,6 +211,9 @@ for package in "${!packages[@]}"; do
         info "Setting pypi global index url"
         python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
         python3 -m pip install --upgrade pip setuptools wheel build cython
+        python3 -m pip config set global.trusted-host 10.3.10.189
+        python3 -m pip config set global.extra-index-url http://10.3.10.189:8081/repository/project-2193-python/simple
+        invoke_hook_command env-setup "${venv_dir}"
 
         info "Building python wheel package"
         if [[ -f pyproject.toml ]] ; then
@@ -195,6 +222,7 @@ for package in "${!packages[@]}"; do
             python3 setup.py bdist_wheel || warn "${package} build failed via setuptools"
             #python3 setup.py sdist
         fi
+        invoke_hook_command build
         deactivate
 
         if [[ -f "${scriptPath}/logs/${package}-${version}".fail ]] ; then
@@ -212,6 +240,7 @@ if [[ "${do_upload}" == "YESPLEASE" ]] ; then
     while IFS= read -r artifact; do
         info "Uploading artifact ${artifact}"
         upload "${artifact}"
+        invoke_hook_command upload
     done < <(find "${HOME}/source" -type f -name '*.whl')
 fi
 

@@ -1,0 +1,19 @@
+#! /bin/bash
+
+dir=${1}
+
+# helper scripts from autoconf
+mapfile -t dest < <(find "${dir}" -name config.guess -or -name config.sub)
+
+if [[ ${#dest[@]} -gt 2 ]] ; then
+    echo "Multiple copies of config.guess a/ config.sub have been found"
+fi
+
+for idx in "${!dest[@]}"; do
+    if grep -wqs config-patches@gnu.org "${dest[$idx]}"; then
+        echo "Replace architecture detection code in autotool helper script ${dest[$idx]}"
+        cp -v /usr/lib/rpm/openEuler/"${dest[$idx]##*/}" "${dest[$idx]}"
+    else
+        echo "skip ${dest[$idx]}"
+    fi
+done
