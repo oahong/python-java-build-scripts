@@ -46,4 +46,7 @@ NEXUS_PASS=password scripts/build.sh -u -p arrow -v apache-arrow-4.0.2 | tee scr
   - [x] 指定软件包名
   - [x] 指定软件版本
   - [x] 指定CVS文件
+  - [ ] 指定软件包类别
+    - [ ] python 软件包
+    - [ ] java 软件包
   - [x] 指定是否执行Upload操作
