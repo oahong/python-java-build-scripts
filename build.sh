@@ -177,8 +177,8 @@ build_java_package() {
 }
 
 options=$(getopt --name "${0}" \
-    --options n:v:f:ut:h \
-    --longoptions name:,version:,csvfile:,upload,type:,help \
+    --options n:v:ut:h \
+    --longoptions name:,version:,upload,type:,help \
     -- "$@")
 eval set -- "${options}"
 
@@ -205,7 +205,6 @@ while : ; do
             ;;
         *)
             help
-            shift 1
             ;;
     esac
 done
