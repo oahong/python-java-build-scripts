@@ -37,7 +37,6 @@ warn() {
     # Remove trailing dash from varable ${package_log_prefix}
     # in case ${version} is unset during clone phase
     echo "${1}" | tee -a "${package_log_prefix%-}".fail
-
 }
 
 # die $package $stage
@@ -132,6 +131,8 @@ setup_python_build_env() {
 
     # shellcheck disable=SC1091
     source "${venv_dir}/bin/activate"
+    #FIXME: The local repository should have higher priority: dependencies should be
+    #FIXME  downloaded from the local repository first, with the public repository as a fallback.
     info "Setting pypi global index url and extra-index-url"
     python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
     python3 -m pip install --upgrade pip setuptools wheel build cython
