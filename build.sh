@@ -59,14 +59,25 @@ invoke_hook_command() {
 }
 
 upload() {
-    # FIXME: upload artifacts depends on package type
-    local whl=${1}
+    local artifact=${1}
 
-    if [[ ${package_type} == "python" ]] ; then
+    if [[ "${package_type}" == "python" ]] ; then
         curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
             -X POST -H "Content-Type: multipart/form-data"  \
-            -F "pypi.asset=@${whl}"                         \
+            -F "pypi.asset=@${artifact}"                         \
             "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
+    elif [[ "${package_type}" == "java" ]] ; then
+        if [[ -f build.gradle ]] ; then
+            ./gradlew publish \
+                -PnexusUrl= http://10.3.10.189:8081/repository/project-2193-java \
+                -PnexusUsername="${NEXUS_USER:-wxiat}" \
+                -PnexusPassword="${NEXUS_PASS}"
+        elif [[ -f pom.xml ]] ; then
+            mvn deploy \
+                -DaltDeploymentRepository=nexus-repo::default::http://10.3.10.189:8081/repository/project-2193-java \
+                -Dusername="${NEXUS_USER:-wxiat}" \
+                -Dpassword="${NEXUS_PASS}"
+        fi
     fi
 }
 
