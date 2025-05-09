@@ -34,7 +34,9 @@ info() {
 # warn $package $stage
 warn() {
     echo -e "${color[warn]}W:${color[reset]} ${1}..."
-    echo "${1}" | tee -a "${scriptPath}/logs/${package}-${version:-all}.fail"
+    # Remove trailing dash from varable ${package_log_prefix}
+    # in case ${version} is unset during clone phase
+    echo "${1}" | tee -a "${package_log_prefix%-}".fail
 
 }
 
@@ -265,9 +267,6 @@ for package in "${!packages[@]}"; do
         fi
     fi
 
-    # Remove old package logs
-    rm -fv "${scriptPath}/logs/${package}"-*.fail
-
     info "Processing package: ${package}"
     source_dir="${HOME}/source/${package}"
     info "Making directory: ${source_dir}"
@@ -289,8 +288,15 @@ for package in "${!packages[@]}"; do
                 continue
             fi
         fi
+
+        package_log_prefix=${scriptPath}/logs/${package}/${version/\//_}
+        mkdir -pv "$(dirname "${package_log_prefix}")"
+
+        # Remove old fail log
+        rm -fv "${package_log_prefix}".fail
+
         info "----------------------------------"
-        if [[ -f "${scriptPath}/logs/${package}-${version}".success ]] ; then
+        if [[ -f "${package_log_prefix}".success ]] ; then
             info "${package} was successfully built in a previous run"
             continue
         fi
@@ -320,11 +326,11 @@ for package in "${!packages[@]}"; do
 
         upload_artifacts
 
-        if [[ -f "${scriptPath}/logs/${package}-${version}".fail ]] ; then
+        if [[ -f "${package_log_prefix}".fail ]] ; then
             info "Process ${package} ${version} failed!"
         else
             info "Process ${package} ${version} finished!"
-            touch "${scriptPath}/logs/${package}-${version}".success
+            touch "${package_log_prefix}".success
         fi
         info "----------------------------------"
     done
