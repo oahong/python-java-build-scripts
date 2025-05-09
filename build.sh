@@ -61,10 +61,13 @@ invoke_hook_command() {
 upload() {
     # FIXME: upload artifacts depends on package type
     local whl=${1}
-    curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
-        -X POST -H "Content-Type: multipart/form-data"  \
-        -F "pypi.asset=@${whl}"                         \
-        "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
+
+    if [[ ${package_type} == "python" ]] ; then
+        curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
+            -X POST -H "Content-Type: multipart/form-data"  \
+            -F "pypi.asset=@${whl}"                         \
+            "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
+    fi
 }
 
 help() {
