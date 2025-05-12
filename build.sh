@@ -60,29 +60,6 @@ invoke_hook_command() {
     done
 }
 
-upload() {
-    local artifact=${1}
-
-    if [[ "${package_type}" == "python" ]] ; then
-        curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
-            -X POST -H "Content-Type: multipart/form-data"  \
-            -F "pypi.asset=@${artifact}"                         \
-            "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
-    elif [[ "${package_type}" == "java" ]] ; then
-        if [[ -f build.gradle ]] ; then
-            ./gradlew publish \
-                -PnexusUrl= http://10.3.10.189:8081/repository/project-2193-java \
-                -PnexusUsername="${NEXUS_USER:-wxiat}" \
-                -PnexusPassword="${NEXUS_PASS}"
-        elif [[ -f pom.xml ]] ; then
-            mvn deploy \
-                -DaltDeploymentRepository=nexus-repo::default::http://10.3.10.189:8081/repository/project-2193-java \
-                -Dusername="${NEXUS_USER:-wxiat}" \
-                -Dpassword="${NEXUS_PASS}"
-        fi
-    fi
-}
-
 help() {
     cat <<EOF
 Usage: ${0} [OPTIONS]
@@ -104,24 +81,6 @@ Examples:
   ${0} -n netty-tcnative -t java -u
 EOF
     exit 0
-}
-
-upload_artifacts() {
-    local package_suffix=
-
-    if [[ "${do_upload}" == "YESPLEASE" ]] ; then
-        if [[ "${package_type}" == "python" ]] ; then
-            package_suffix=whl
-        elif [[ "${package_type}" == "java" ]] ; then
-            package_suffix=jar
-        fi
-
-        while IFS= read -r artifact; do
-            info "Uploading artifact ${artifact}"
-            upload "${artifact}"
-            invoke_hook_command upload
-        done < <(find "${source_dir}" -type f -name "*.${package_suffix}")
-    fi
 }
 
 setup_python_build_env() {
@@ -170,9 +129,11 @@ EOF
 }
 
 build_python_package() {
+    local distdir="dist/${version}"
+
     info "Building python wheel package"
     if [[ -f pyproject.toml ]] ; then
-        python3 -m build || warn "${package} build failed via build"
+        python3 -m build -o "${distdir}" || warn "${package} build failed via build"
     else
         python3 setup.py bdist_wheel || warn "${package} build failed via setuptools"
         #python3 setup.py sdist
@@ -189,6 +150,43 @@ build_java_package() {
        mvn clean package || warn "${package} build failed via maven"
    fi
    invoke_hook_command build
+}
+
+upload_python_artifacts() {
+    if [[ "${do_upload}" != "YESPLEASE" ]] ; then
+        return 0
+    fi
+    while IFS= read -r artifact; do
+        if [[ -z "${artifact}" ]] ; then
+            warn "No artifcat found for ${PN}-${PV}, skip artifact uploading"
+            return 0
+        fi
+
+        info "Uploading python artifact ${artifact}"
+        curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
+            -X POST -H "Content-Type: multipart/form-data"  \
+            -F "pypi.asset=@${artifact}"                    \
+            "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
+        invoke_hook_command upload
+    done < <(find "${source_dir}/dist/${version}" -type f -name "*.whl")
+}
+
+upload_java_artifacts() {
+    if [[ "${do_upload}" != "YESPLEASE" ]] ; then
+        return 0
+    fi
+    if [[ -f build.gradle ]] ; then
+        ./gradlew publish \
+            -PnexusUrl= http://10.3.10.189:8081/repository/project-2193-java \
+            -PnexusUsername="${NEXUS_USER:-wxiat}" \
+            -PnexusPassword="${NEXUS_PASS}"
+    elif [[ -f pom.xml ]] ; then
+        mvn deploy \
+            -DaltDeploymentRepository=nexus-repo::default::http://10.3.10.189:8081/repository/project-2193-java \
+            -Dusername="${NEXUS_USER:-wxiat}" \
+            -Dpassword="${NEXUS_PASS}"
+    fi
+    invoke_hook_command upload
 }
 
 options=$(getopt --name "${0}" \
@@ -295,7 +293,7 @@ for package in "${!packages[@]}"; do
         mkdir -pv "$(dirname "${package_log_prefix}")"
 
         # Remove old fail log
-        rm -fv "${package_log_prefix}".fail
+        rm -fv "${package_log_prefix}".{fail,err}
 
         info "----------------------------------"
         if [[ -f "${package_log_prefix}".success ]] ; then
@@ -319,14 +317,14 @@ for package in "${!packages[@]}"; do
             python)
                 setup_python_build_env
                 build_python_package
+                upload_python_artifacts
                 ;;
             java)
                 setup_java_build_env
                 build_java_package
+                upload_java_artifacts
                 ;;
         esac
-
-        upload_artifacts
 
         if [[ -f "${package_log_prefix}".fail ]] ; then
             info "Process ${package} ${version} failed!"
