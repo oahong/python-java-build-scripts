@@ -42,6 +42,7 @@ warn() {
 # die $package $stage
 die() {
     echo -e "${color[error]}E:=1=${color[reset]} $*" >&2
+    echo "${1}" | tee -a "${package_log_prefix%-}".err
     exit 1
 }
 
@@ -277,7 +278,7 @@ for package in "${!packages[@]}"; do
         info "Source code repository already exists at ${source_dir}, skipping git clone"
     else
         info "Cloning source code from ${repo[$package]} to ${source_dir}"
-        git clone "${repo[$package]}" "${source_dir}" || warn "${package} clone failed"
+        git clone "${repo[$package]}" "${source_dir}" || die "${package} clone failed"
     fi
     invoke_hook_command clone
 
@@ -303,10 +304,10 @@ for package in "${!packages[@]}"; do
         fi
         info "Trying to checkout tag: ${version}"
         if git describe --tags "${version}" >& /dev/null ; then
-            git checkout "${version}" || warn "${package} checkout to ${version} failed"
+            git checkout --force "${version}" || die "${package} checkout to ${version} failed"
             if [[ -f .gitmodules ]]; then
                info "Updating git submodules"
-               git submodule update || warn "${package} failed to update submodules"
+               git submodule update --force || die "${package} failed to update submodules"
             fi
         else
             warn "${package} tag ${version} not exists"
