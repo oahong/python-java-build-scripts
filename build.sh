@@ -313,7 +313,7 @@ for package in "${!packages[@]}"; do
             git checkout --force "${version}" || die "${package} checkout to ${version} failed"
             if [[ -f .gitmodules ]]; then
                info "Updating git submodules"
-               git submodule update --force || die "${package} failed to update submodules"
+               git submodule update --init --recursive --force || die "${package} failed to update submodules"
             fi
         else
             warn "${package} tag ${version} not exists"
