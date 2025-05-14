@@ -1,0 +1,17 @@
+echo "Execute aiohttp hook"
+
+if [[ -f pyproject.toml ]] && ! grep -wqs build-system pyproject.toml ; then
+   echo "Fix build dependency, require Cython for building package from git repository"
+   cat <<EOF>>pyproject.toml
+[build-system]
+requires = [
+    "setuptools>=40.8.0",  # 使用现代 setuptools 版本
+    "wheel>=0.34.0",       # 用于构建 wheel 包
+    "Cython>=0.29.0",      # 添加 Cython 作为构建依赖
+]
+build-backend = "setuptools.build_meta"  # 指定构建后端为 setuptools
+EOF
+fi
+
+echo "Fix submodule url from git to https"
+sed -e 's/git:/https:/g' -i .git/config
