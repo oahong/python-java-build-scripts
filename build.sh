@@ -309,7 +309,7 @@ for package in "${!packages[@]}"; do
         fi
         info "Trying to checkout tag: ${version}"
         git fetch --all || die "${package} git fetch failed"
-        if git describe --tags "${version}" >& /dev/null ; then
+        if git describe --all "${version}" >& /dev/null ; then
             git checkout --force "${version}" || die "${package} checkout to ${version} failed"
             if [[ -f .gitmodules ]]; then
                info "Updating git submodules"
