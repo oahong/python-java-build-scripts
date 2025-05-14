@@ -50,11 +50,18 @@ invoke_hook_command() {
     local stage="${1}"
     local dir="${2:-${source_dir}}"
 
+    local stageHook="${scriptPath}/hooks/post-${stage}"
+
     for s in "${stages[@]}" ; do
         if [[ "${s}" == "${stage}" ]] ; then
-            if [[ -f "${scriptPath}/hooks/post-${stage}" ]] ; then
-                info "Inovke hook command in stage ${stage}"
-                eval "${scriptPath}/hooks/post-${stage}" "${dir}" || true
+            if [[ -f "${stageHook}" ]] ; then
+                info "Inovke hook script in stage ${stage}"
+                eval "${stageHook}" "${dir}" || true
+            fi
+
+            if [[ -f "${stageHook}.d/${package}" ]] ; then
+                info "Inovke hook.d script in stage ${stage}"
+                eval "${stageHook}.d/${package}" "${dir}" || true
             fi
         fi
     done
