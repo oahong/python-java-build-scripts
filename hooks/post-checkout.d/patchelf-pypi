@@ -1,0 +1,5 @@
+echo "patch CMakeLists.txt..."
+if [[ -f CMakeLists.txt ]] ; then
+   echo "Skip patchelf unit test"
+   sed -e '/check/d' -i CMakeLists.txt
+fi

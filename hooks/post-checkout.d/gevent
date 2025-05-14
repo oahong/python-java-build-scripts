@@ -1,0 +1,12 @@
+echo "post script for gevent..."
+if [[ -f src/gevent/libev/corecext.pyx ]] ; then
+   echo "Fix integer types definition..."
+   sed -e 's/integer_types = (int, long)/integer_types = int,/' \
+       -i src/gevent/libev/corecext.pyx
+fi
+
+if [[ -f pyproject.toml ]] ; then
+   echo "Change the version of the greenlet dependency to ==3.1.1"
+   sed -e 's/greenlet >= .*;/greenlet == 3.1.1 ;/' \
+       -i pyproject.toml
+fi
