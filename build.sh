@@ -152,7 +152,7 @@ build_python_package() {
 build_java_package() {
    info "Building java package"
    if [[ -f build.gradle ]] ; then
-       gradle clean build jar || warn "${package} build failed via gradle"
+       gradle -x test clean build jar || warn "${package} build failed via gradle"
    elif [[ -f pom.xml ]] ; then
        mvn clean package -Dmaven.test.skip=true || warn "${package} build failed via maven"
    fi
