@@ -1,3 +1,14 @@
+# 仓库查询脚本
+## 功能说明
+通过curl查询 project-2193 python及java制品仓库中存储的软件。
+## 使用方法
+```shell
+# 列出python whl包
+./repolist.sh python
+# 列出java jar包
+./repolist.sh java
+```
+
 # 构建脚本
 ## 功能说明
 读取 target/python.csv 或 target/java.csv 中记录的软件包名和版本，完成python wheel包或者Java jar包的构建，脚本也可通过参数传递指定需构建的软件包名、版本信息,
@@ -44,7 +55,7 @@ NEXUS_PASS=password scripts/build.sh -u -p arrow -v apache-arrow-4.0.2 | tee scr
 - [-] 增加hooks功能
   - [x] 增加构建阶段hook功能
   - [ ] 增加构建前软件包系统依赖检测功能
-  - [ ] 增加构建前python依赖处理功能
+  - [x] 增加构建前python依赖处理功能
 - [x] 增加参数处理，支持
   - [x] 指定软件包名
   - [x] 指定软件版本
