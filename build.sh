@@ -173,7 +173,8 @@ upload_python_artifacts() {
         curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
             -X POST -H "Content-Type: multipart/form-data"  \
             -F "pypi.asset=@${artifact}"                    \
-            "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python"
+            "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python" || \
+            die "Failed to upload artifacts"
         invoke_hook_command upload
     done < <(find "${source_dir}/dist/${version}" -type f -name "*.whl")
 }
@@ -186,13 +187,15 @@ upload_java_artifacts() {
         ./gradlew publish \
             -PnexusUrl=http://10.3.10.189:8081/repository/project-2193-java \
             -PnexusUsername="${NEXUS_USER:-wxiat}" \
-            -PnexusPassword="${NEXUS_PASS}"
+            -PnexusPassword="${NEXUS_PASS}" \
+            die "Failed to publish artifacts"
     elif [[ -f pom.xml ]] ; then
         mvn deploy \
             -DaltDeploymentRepository=nexus-repo::default::http://10.3.10.189:8081/repository/project-2193-java \
             -Dusername="${NEXUS_USER:-wxiat}" \
             -Dpassword="${NEXUS_PASS}" \
-            -Dmaven.test.skip=true
+            -Dmaven.test.skip=true || \
+            die "Failed to deploy artifacts"
     fi
     invoke_hook_command upload
 }
