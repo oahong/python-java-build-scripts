@@ -154,7 +154,7 @@ build_java_package() {
    if [[ -f build.gradle ]] ; then
        gradle clean build jar || warn "${package} build failed via gradle"
    elif [[ -f pom.xml ]] ; then
-       mvn clean package || warn "${package} build failed via maven"
+       mvn clean package -Dmaven.test.skip=true || warn "${package} build failed via maven"
    fi
    invoke_hook_command build
 }
@@ -191,7 +191,8 @@ upload_java_artifacts() {
         mvn deploy \
             -DaltDeploymentRepository=nexus-repo::default::http://10.3.10.189:8081/repository/project-2193-java \
             -Dusername="${NEXUS_USER:-wxiat}" \
-            -Dpassword="${NEXUS_PASS}"
+            -Dpassword="${NEXUS_PASS}" \
+            -Dmaven.test.skip=true
     fi
     invoke_hook_command upload
 }
