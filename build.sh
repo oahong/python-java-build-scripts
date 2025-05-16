@@ -184,7 +184,7 @@ upload_java_artifacts() {
     fi
     if [[ -f build.gradle ]] ; then
         ./gradlew publish \
-            -PnexusUrl= http://10.3.10.189:8081/repository/project-2193-java \
+            -PnexusUrl=http://10.3.10.189:8081/repository/project-2193-java \
             -PnexusUsername="${NEXUS_USER:-wxiat}" \
             -PnexusPassword="${NEXUS_PASS}"
     elif [[ -f pom.xml ]] ; then
