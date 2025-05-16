@@ -142,7 +142,7 @@ build_python_package() {
     if [[ -f pyproject.toml ]] ; then
         python3 -m build -o "${distdir}" || warn "${package} build failed via build"
     else
-        python3 setup.py bdist_wheel || warn "${package} build failed via setuptools"
+        python3 setup.py bdist_wheel -d "${distdir}" || warn "${package} build failed via setuptools"
         #python3 setup.py sdist
     fi
     invoke_hook_command build
