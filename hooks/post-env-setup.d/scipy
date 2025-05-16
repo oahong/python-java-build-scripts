@@ -1,0 +1,2 @@
+echo "Install build dependencies for scipy"
+python3 -m pip install --upgrade numpy nose packaging pythran pytest meson-python

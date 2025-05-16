@@ -1,0 +1,19 @@
+# REF: http://10.3.10.30/project-2193/boringssl/commit/8f85ec22db9c903963f537db4fe90e2adaff394a#diff-219da21ffe13c7e92e46f8925523581b8f422af6
+echo "Execute post script for grpc..."
+if [[ -f third_party/boringssl-with-bazel/src/include/openssl/base.h ]] ; then
+   echo "Fix OPENSSL_64_BIT definition for sw64 in base.h..."
+   sed -e '/OPENSSL_AARCH64/a #elif defined(__sw_64__)\n#define OPENSSL_64_BIT\n#define OPENSSL_SW_64' \
+       -i third_party/boringssl-with-bazel/src/include/openssl/base.h
+fi
+
+if [[ -f third_party/boringssl-with-bazel/src/include/openssl/target.h ]] ; then
+   echo "Fix OPENSSL_64_BIT definition for sw64 in target.h..."
+   sed -e '/OPENSSL_AARCH64/a #elif defined(__sw_64__)\n#define OPENSSL_64_BIT\n#define OPENSSL_SW_64' \
+       -i third_party/boringssl-with-bazel/src/include/openssl/target.h
+fi
+
+if [[ -f third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc ]] ; then
+   echo "Fix absl examine_stack definition for sw64..."
+   sed -e 's/defined(__alpha__)/& || defined(__sw_64__)/' \
+       -i third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc
+fi
