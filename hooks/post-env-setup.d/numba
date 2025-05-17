@@ -1,0 +1,2 @@
+echo "Install build dependencies for numba"
+python3 -m pip install --upgrade numpy==1.26.4

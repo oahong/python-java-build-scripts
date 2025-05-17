@@ -1,0 +1,7 @@
+echo "Execute post checkout hook script for ninja-python-distributions"
+if grep -wqs pip.req setup.py; then
+    echo "Replace pip.req.parse_requirements with requirements.parser to parse requirements-dev.txt"
+    sed -e 's/^from pip.req.*/from requirements.parser import parse as requirements_parse/' \
+        -e '/def _parse_requirements(filename):/{N;s|def _parse_requirements(filename):\n.*|def _parse_requirements(filename):\n    try:\n        with open(filename, '"'"'r'"'"') as f:\n            return [str(req) for req in requirements_parse(f) if req.name]\n    except FileNotFoundError:\n        return []  # Return empty list if file is missing|;}' \
+        -i setup.py
+fi
