@@ -1,0 +1,6 @@
+echo "Execute post-checkout.d script for curl ..."
+if [[ -f src/easy.c ]] ; then
+   echo "Fix integer types definition..."
+   sed -e 's/\(METH_NOARGS, \)curl_duphandle_doc/\1NULL/' \
+       -i src/easy.c
+fi
