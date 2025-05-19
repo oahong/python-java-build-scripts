@@ -1,0 +1,13 @@
+echo "Execute libclang post-checkout.d hook..."
+if [[ -f setup.py ]] ; then
+    echo "Fix setup.py compatibility..."
+    sed -e 's@import get_platform,@import@' \
+        -e '/import os/a from distutils.util import get_platform' \
+        -e 's/\(get_platform(\)None\()\)/\1\2/' \
+        -i setup.py
+
+    echo "Use system clang library..."
+    sed -e 's@\./native/@/usr/lib64/@' \
+        -e 's/source_dir, libname/& + ".17.0.6"/' \
+        -i setup.py
+fi
