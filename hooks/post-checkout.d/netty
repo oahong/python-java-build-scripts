@@ -1,7 +1,8 @@
 echo "post script for netty..."
 if [[ -f pom.xml ]] ; then
    echo "Fix maven enforcer policy..."
-   sed -e 's/\^x86\(_64\)\$/sw\1/' \
+   sed -e 's@\^\(x86_64\)@^(\1|sw_64)@' \
+       -e 's@x86_64|@&sw_64|@' \
        -i pom.xml
 fi
 
