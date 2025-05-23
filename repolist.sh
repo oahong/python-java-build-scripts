@@ -8,11 +8,23 @@ username=wxiat
 password="${NEXUS_PASS}"
 
 if [[ "$#" -ne 1 ]] ; then
-    echo "Usage: $0 [python|java]"
+    echo "Usage: NEXUS_PASS=password $0 [python|java]"
     exit 0
 else
     type="${1}"
 fi
+
+if [[ -z "${password}" ]] ; then
+    echo "You need to set NEXUS_PASS environment variable"
+    echo "export NEXUS_PASS=the_real_nexus_password"
+    exit 1
+fi
+
+if which jq &> /dev/null ; then
+    echo "jq is missing, install jq first!"
+    exit 2
+fi
+
 # 初始化 continuationToken 为空
 continuationToken=""
 
