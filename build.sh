@@ -52,14 +52,14 @@ invoke_hook_command() {
 
     local stageHook="${scriptPath}/hooks/post-${stage}"
 
-    for s in "${stages[@]}" ; do
-        if [[ "${s}" == "${stage}" ]] ; then
-            if [[ -f "${stageHook}" ]] ; then
+    for s in "${stages[@]}"; do
+        if [[ "${s}" == "${stage}" ]]; then
+            if [[ -f "${stageHook}" ]]; then
                 info "Inovke hook script in stage ${stage}"
                 eval "${stageHook}" "${dir}" || true
             fi
 
-            if [[ -f "${stageHook}.d/${package}" ]] ; then
+            if [[ -f "${stageHook}.d/${package}" ]]; then
                 info "Inovke hook.d script in stage ${stage}"
                 eval "${stageHook}.d/${package}" "${dir}" || true
             fi
@@ -101,10 +101,10 @@ setup_python_build_env() {
     #FIXME: The local repository should have higher priority: dependencies should be
     #FIXME  downloaded from the local repository first, with the public repository as a fallback.
     info "Setting pypi global index url and extra-index-url"
-    python3 -m pip config set global.index-url https://mirrors.ustc.edu.cn/pypi/simple
+    python3 -m pip config set global.index-url http://nexus.wxiat.com:8081/repository/project-2193-python-group/simple
     python3 -m pip install --upgrade pip setuptools wheel build cython
-    python3 -m pip config set global.trusted-host 10.3.10.189
-    python3 -m pip config set global.extra-index-url http://10.3.10.189:8081/repository/project-2193-python/simple
+    python3 -m pip config set global.trusted-host nexus.wxiat.com
+    python3 -m pip config set global.extra-index-url http://nexus.wxiat.com:8081/repository/project-2193-python/simple
 
     invoke_hook_command env-setup "${venv_dir}"
 }
@@ -112,13 +112,13 @@ setup_python_build_env() {
 setup_java_build_env() {
     local jenv_dir="${HOME}"/.jenv
 
-    if [[ -d "${jenv_dir}" ]] ; then
+    if [[ -d "${jenv_dir}" ]]; then
         info "Skip creating jenv environment"
     else
         info "Creating jenv environment: ${jenv_dir}"
 
         git clone http://10.3.10.30/project-2193/jenv "${jenv_dir}"
-        if ! grep -wq jenv "${HOME}"/.bashrc ; then
+        if ! grep -wq jenv "${HOME}"/.bashrc; then
             cat <<EOF
 echo 'export PATH="$HOME/.jenv/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(jenv init -)"' >> ~/.bashrc
@@ -139,7 +139,7 @@ build_python_package() {
     local distdir="dist/${version}"
 
     info "Building python wheel package"
-    if [[ -f pyproject.toml ]] ; then
+    if [[ -f pyproject.toml ]]; then
         python3 -m build -o "${distdir}" || warn "${package} build failed via build"
     else
         python3 setup.py bdist_wheel -d "${distdir}" || warn "${package} build failed via setuptools"
@@ -150,51 +150,51 @@ build_python_package() {
 }
 
 build_java_package() {
-   info "Building java package"
-   if [[ -f build.gradle ]] ; then
-       gradle -x test clean build jar || warn "${package} build failed via gradle"
-   elif [[ -f pom.xml ]] ; then
-       mvn clean package -Dmaven.test.skip=true || warn "${package} build failed via maven"
-   fi
-   invoke_hook_command build
+    info "Building java package"
+    if [[ -f build.gradle ]]; then
+        gradle -x test clean build jar || warn "${package} build failed via gradle"
+    elif [[ -f pom.xml ]]; then
+        mvn clean package -X -e -DskipTests=true || warn "${package} build failed via maven"
+    fi
+    invoke_hook_command build
 }
 
 upload_python_artifacts() {
-    if [[ "${do_upload}" != "YESPLEASE" ]] ; then
+    if [[ "${do_upload}" != "YESPLEASE" ]]; then
         return 0
     fi
     while IFS= read -r artifact; do
-        if [[ -z "${artifact}" ]] ; then
+        if [[ -z "${artifact}" ]]; then
             warn "No artifcat found for ${PN}-${PV}, skip artifact uploading"
             return 0
         fi
 
         info "Uploading python artifact ${artifact}"
-        curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}"     \
-            -X POST -H "Content-Type: multipart/form-data"  \
-            -F "pypi.asset=@${artifact}"                    \
-            "http://10.3.10.189:8081/service/rest/v1/components?repository=project-2193-python" || \
+        curl -v -u "${NEXUS_USER:-wxiat}:${NEXUS_PASS}" \
+            -X POST -H "Content-Type: multipart/form-data" \
+            -F "pypi.asset=@${artifact}" \
+            "http://nexus.wxiat.com:8081/service/rest/v1/components?repository=project-2193-python" ||
             die "Failed to upload artifacts"
         invoke_hook_command upload
     done < <(find "${source_dir}/dist/${version}" -type f -name "*.whl")
 }
 
 upload_java_artifacts() {
-    if [[ "${do_upload}" != "YESPLEASE" ]] ; then
+    if [[ "${do_upload}" != "YESPLEASE" ]]; then
         return 0
     fi
-    if [[ -f build.gradle ]] ; then
+    if [[ -f build.gradle ]]; then
         ./gradlew publish \
-            -PnexusUrl=http://10.3.10.189:8081/repository/project-2193-java \
+            -PnexusUrl=http://nexus.wxiat.com:8081/repository/project-2193-java \
             -PnexusUsername="${NEXUS_USER:-wxiat}" \
             -PnexusPassword="${NEXUS_PASS}" \
             die "Failed to publish artifacts"
-    elif [[ -f pom.xml ]] ; then
+    elif [[ -f pom.xml ]]; then
         mvn deploy \
-            -DaltDeploymentRepository=nexus-repo::default::http://10.3.10.189:8081/repository/project-2193-java \
+            -DaltDeploymentRepository=nexus-repo::default::http://nexus.wxiat.com:8081/repository/project-2193-java \
             -Dusername="${NEXUS_USER:-wxiat}" \
             -Dpassword="${NEXUS_PASS}" \
-            -Dmaven.test.skip=true || \
+            -DskipTests=true ||
             die "Failed to deploy artifacts"
     fi
     invoke_hook_command upload
@@ -206,39 +206,40 @@ options=$(getopt --name "${0}" \
     -- "$@")
 eval set -- "${options}"
 
-while : ; do
+while :; do
     case "${1}" in
-        -n|--name)
-            packagename="${2}"
-            shift 2
-            ;;
-        -v|--version)
-            packageversion="${2}"
-            shift 2
-            ;;
-        -u|--upload)
-            do_upload="YESPLEASE"
-            shift 1
-            ;;
-        -t|--type)
-            package_type="${2}"
-            shift 2;;
-        --)
-            shift 1
-            break
-            ;;
-        *)
-            help
-            ;;
+    -n | --name)
+        packagename="${2}"
+        shift 2
+        ;;
+    -v | --version)
+        packageversion="${2}"
+        shift 2
+        ;;
+    -u | --upload)
+        do_upload="YESPLEASE"
+        shift 1
+        ;;
+    -t | --type)
+        package_type="${2}"
+        shift 2
+        ;;
+    --)
+        shift 1
+        break
+        ;;
+    *)
+        help
+        ;;
     esac
 done
 
-if [[ -z "${NEXUS_PASS}" ]] ; then
+if [[ -z "${NEXUS_PASS}" ]]; then
     die "Set up NEXUS_PASS environment variable firsts"
 fi
 
 # Package type will fallback to python if not specified in the command line
-if [[ -z "${package_type}" ]] ; then
+if [[ -z "${package_type}" ]]; then
     package_type=python
 fi
 
@@ -252,16 +253,16 @@ fi
 # Read CSV
 while IFS=, read -r number name version; do
     # filter numbers
-    if [[ $number =~ ^\"[0-9]+\"$ ]] ; then
+    if [[ $number =~ ^\"[0-9]+\"$ ]]; then
         # strip double quotes
         pname=$(echo "${name}" | tr -d '"')
         pversion=$(echo "${version}" | tr -d '"')
         packages[$pname]+="${pversion} "
         repo[$pname]="http://10.3.10.30/project-2193/${pname}"
     fi
-done < "$csv_file"
+done <"$csv_file"
 
-if [[ $DEBUG -eq 1 ]] ;then
+if [[ $DEBUG -eq 1 ]]; then
     #Debug output
     for package in "${!packages[@]}"; do
         info package "${package}"
@@ -271,8 +272,8 @@ if [[ $DEBUG -eq 1 ]] ;then
 fi
 
 for package in "${!packages[@]}"; do
-    if [[ -n "${packagename}" ]] ; then
-        if [[ "${packagename}" != "${package}" ]] ; then
+    if [[ -n "${packagename}" ]]; then
+        if [[ "${packagename}" != "${package}" ]]; then
             info "Skipping package ${package}"
             continue
         fi
@@ -283,7 +284,7 @@ for package in "${!packages[@]}"; do
     info "Making directory: ${source_dir}"
     mkdir -p "${source_dir}"
 
-    if [[ -d "${source_dir}/.git" ]] ; then
+    if [[ -d "${source_dir}/.git" ]]; then
         info "Source code repository already exists at ${source_dir}, skipping git clone"
     else
         info "Cloning source code from ${repo[$package]} to ${source_dir}"
@@ -292,9 +293,9 @@ for package in "${!packages[@]}"; do
     invoke_hook_command clone
 
     pushd "${source_dir}" || die "No such directory: ${source_dir}"
-    for version in ${packages[$package]} ; do
-        if [[ -n "${packageversion}" ]] ; then
-            if [[ "${packageversion}" != "${version}" ]] ; then
+    for version in ${packages[$package]}; do
+        if [[ -n "${packageversion}" ]]; then
+            if [[ "${packageversion}" != "${version}" ]]; then
                 info "Skipping package ${package} version ${version}"
                 continue
             fi
@@ -307,17 +308,17 @@ for package in "${!packages[@]}"; do
         rm -fv "${package_log_prefix}".{fail,err}
 
         info "----------------------------------"
-        if [[ -f "${package_log_prefix}".success ]] ; then
+        if [[ -f "${package_log_prefix}".success ]]; then
             info "${package} was successfully built in a previous run"
             continue
         fi
         info "Trying to checkout tag: ${version}"
         git fetch --all || die "${package} git fetch failed"
-        if git describe --all "${version}" >& /dev/null ; then
+        if git describe --all "${version}" >&/dev/null; then
             git checkout --force "${version}" || die "${package} checkout to ${version} failed"
             if [[ -f .gitmodules ]]; then
-               info "Updating git submodules"
-               git submodule update --init --recursive --force || die "${package} failed to update submodules"
+                info "Updating git submodules"
+                git submodule update --init --recursive --force || die "${package} failed to update submodules"
             fi
         else
             warn "${package} tag ${version} not exists"
@@ -326,19 +327,19 @@ for package in "${!packages[@]}"; do
         invoke_hook_command checkout
 
         case "${package_type}" in
-            python)
-                setup_python_build_env
-                build_python_package
-                upload_python_artifacts
-                ;;
-            java)
-                setup_java_build_env
-                build_java_package
-                upload_java_artifacts
-                ;;
+        python)
+            setup_python_build_env
+            build_python_package
+            upload_python_artifacts
+            ;;
+        java)
+            setup_java_build_env
+            build_java_package
+            upload_java_artifacts
+            ;;
         esac
 
-        if [[ -f "${package_log_prefix}".fail ]] ; then
+        if [[ -f "${package_log_prefix}".fail ]]; then
             info "Process ${package} ${version} failed!"
         else
             info "Process ${package} ${version} finished!"
