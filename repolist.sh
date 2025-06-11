@@ -20,7 +20,7 @@ if [[ -z "${password}" ]] ; then
     exit 1
 fi
 
-if which jq &> /dev/null ; then
+if ! which jq &>/dev/null; then
     echo "jq is missing, install jq first!"
     exit 2
 fi
