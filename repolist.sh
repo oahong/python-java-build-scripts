@@ -2,19 +2,19 @@
 # 脚本使用kimi生成，再次基础上进行健壮性调整
 # 系统需安装 curl 及 jq
 # REF: https://help.sonatype.com/en/search-api.html
-nexus_url_prefix="http://10.3.10.189:8081/service/rest/v1/search/assets?repository=project-2193"
+nexus_url_prefix="http://nexus.wxiat.com:8081/service/rest/v1/search/assets?repository=project-2193"
 
 username=wxiat
 password="${NEXUS_PASS}"
 
-if [[ "$#" -ne 1 ]] ; then
+if [[ "$#" -ne 1 ]]; then
     echo "Usage: NEXUS_PASS=password $0 [python|java]"
     exit 0
 else
     type="${1}"
 fi
 
-if [[ -z "${password}" ]] ; then
+if [[ -z "${password}" ]]; then
     echo "You need to set NEXUS_PASS environment variable"
     echo "export NEXUS_PASS=the_real_nexus_password"
     exit 1
@@ -30,7 +30,7 @@ continuationToken=""
 
 while true; do
     # token 为 null 时停止后续请求
-    if [[ "${continuationToken}" == "null" ]] ; then
+    if [[ "${continuationToken}" == "null" ]]; then
         break
     fi
 
@@ -42,8 +42,8 @@ while true; do
     fi
 
     # Java查询时过滤出 jar 包
-    if [[ "${type}" == "java" ]] ; then
-       query_url+="&maven.extension=jar"
+    if [[ "${type}" == "java" ]]; then
+        query_url+="&maven.extension=jar"
     fi
 
     # 发送请求并解析 JSON 响应
